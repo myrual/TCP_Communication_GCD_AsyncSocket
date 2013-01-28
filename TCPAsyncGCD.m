@@ -75,8 +75,6 @@
     self.Connected = YES;
 
     self.ConnectSuccess();
-    self.ConnectTimeout = nil;
-    self.timeOut = -1;
 }
 
 /**
@@ -91,8 +89,6 @@
         }
     }
     self.ReadSuccess(data);
-    self.ReadTimeout = nil;
-    self.timeOut = -1;
 }
 
 
@@ -109,8 +105,6 @@
  **/
 - (void)socket:(GCDAsyncSocket *)sock didWriteDataWithTag:(long)tag{
     self.WriteSuccess();
-    self.WriteTimeout = nil;
-    self.timeOut = -1;
 }
 
 /**
