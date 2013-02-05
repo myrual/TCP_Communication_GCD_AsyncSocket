@@ -19,6 +19,7 @@
 @synthesize mysocket;
 @synthesize Connected;
 @synthesize timeOut = _timeOut;
+@synthesize needToKeepSocketLiveAfterReadTimeout = _needToKeepSocketLiveAfterReadTimeout;
 
 -(id) init{
     id result = nil;
@@ -27,6 +28,7 @@
         GCDAsyncSocket  *socket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
         if (socket) {
             self.mysocket = socket;
+            _needToKeepSocketLiveAfterReadTimeout = NO;
         }
         else{
             result = nil;
@@ -67,6 +69,15 @@
     self.timeOut = inputMaxTimeout;
     [self.mysocket readDataWithTimeout:self.timeOut tag:1];
 }
+-(void) ReadwithTimeoutKeepLive:(NSTimeInterval)inputMaxTimeout didFinished:(BOOL (^)(NSData *))Filter Success:(void (^)(NSData *))Success TimeoutBlk:(void (^)())timeoutProcess{
+    self.needToKeepSocketLiveAfterReadTimeout = YES;
+    [self ReadwithTimeout:inputMaxTimeout didFinished:Filter Success:Success TimeoutBlk:timeoutProcess];
+}
+
+-(BOOL)socketShouldKeepLiveAfterReadTimeOut:(GCDAsyncSocket *) socket{
+    return self.needToKeepSocketLiveAfterReadTimeout;
+}
+
 /**
  * Called when a socket connects and is ready for reading and writing.
  * The host parameter will be an IP address, not a DNS name.

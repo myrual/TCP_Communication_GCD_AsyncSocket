@@ -46,6 +46,7 @@ maxTimeOutSec:(NSTimeInterval)inputMaxTimeout;
              didFinished:(BOOL (^)(NSData *)) Filter
       Success:(void(^)(NSData *result)) Success
    TimeoutBlk:(void(^)()) timeoutProcess;
+-(void) ReadwithTimeoutKeepLive:(NSTimeInterval)inputMaxTimeout didFinished:(BOOL (^)(NSData *))Filter Success:(void (^)(NSData *))Success TimeoutBlk:(void (^)())timeoutProcess;
 
 
 -(void) continueRead;
