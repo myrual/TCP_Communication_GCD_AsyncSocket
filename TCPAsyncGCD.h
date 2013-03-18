@@ -7,8 +7,12 @@
 
 #import <Foundation/Foundation.h>
 #import "GCDAsyncSocket.h"
+#import "SpacemanBlocks.h"
 
 @interface TCPAsyncGCD : NSObject
+{
+    __block SMDelayedBlockHandle _delayedBlockHandle;
+}
 
 typedef void (^GCDVoidBlock)();
 typedef void (^GCDReadSuccessBlock)(NSData *);
@@ -25,6 +29,8 @@ typedef BOOL (^GCDReadFilterBlock)(NSData *);
 @property (nonatomic, strong) GCDReadSuccessBlock ReadSuccess;
 @property (nonatomic, strong) GCDReadFilterBlock completeRead;
 @property (nonatomic, strong) GCDAsyncSocket *mysocket;
+@property (nonatomic, strong) NSMutableData *readCache;
+
 
 -(void) ConnectHost:(NSString *)host
              toPort:(NSInteger)port
