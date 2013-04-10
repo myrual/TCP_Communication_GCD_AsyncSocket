@@ -28,8 +28,8 @@
         GCDAsyncSocket  *socket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
         if (socket) {
             self.mysocket = socket;
+            needToKeepSocketLiveAfterReadTimeout = NO;
             _readCache = nil;
-
         }
         else{
             result = nil;
@@ -60,31 +60,44 @@
 }
 
 -(void) continueRead{
+    needToKeepSocketLiveAfterReadTimeout = NO;
     [self.mysocket readDataWithTimeout:self.timeOut tag:1];
-
 }
+-(void) continueRead4KeepSocketLive:(void (^)())timeOutBlock interval:(NSTimeInterval) interval{
+    needToKeepSocketLiveAfterReadTimeout = YES;
+    self.timeOut = -1;
+    [self delayBlock:interval withBlock:timeOutBlock];
+    [self.mysocket readDataWithTimeout:self.timeOut tag:1];
+}
+
 
 -(void) ReadwithTimeout:(NSTimeInterval)inputMaxTimeout didFinished:(BOOL (^)(NSData *))Filter Success:(void (^)(NSData *))Success TimeoutBlk:(void (^)())timeoutProcess{
     self.ReadSuccess = Success;
     self.ReadTimeout = timeoutProcess;
     self.completeRead = Filter;
     self.timeOut = inputMaxTimeout;
+    needToKeepSocketLiveAfterReadTimeout = NO;
+    [self cancelBlock];
     [self.mysocket readDataWithTimeout:self.timeOut tag:1];
 }
 -(void) ReadwithTimeoutKeepLive:(NSTimeInterval)inputMaxTimeout didFinished:(BOOL (^)(NSData *))Filter Success:(void (^)(NSData *))Success TimeoutBlk:(void (^)())timeoutProcess{
+    needToKeepSocketLiveAfterReadTimeout = YES;
     self.ReadSuccess = Success;
-    self.ReadTimeout = timeoutProcess;
     self.completeRead = Filter;
-    self.timeOut = inputMaxTimeout;
-    [self delayBlock:inputMaxTimeout];
+    self.timeOut = KEEPLIVE_READ_TIMEOUT;
+    [self cancelBlock];
+    [self delayBlock:inputMaxTimeout withBlock:^(){
+        [self.mysocket endCurrentRead];
+        timeoutProcess();
+    }];
     [self.mysocket readDataWithTimeout:-1 tag:1];
 }
 
-- (void)delayBlock:(NSTimeInterval) interval
+- (void)delayBlock:(NSTimeInterval) interval withBlock:(void (^)())timeoutProcess
 {
     _delayedBlockHandle = perform_block_after_delay(interval, ^{
         // Work
-        self.ReadTimeout();
+        timeoutProcess();
         _delayedBlockHandle = nil;
     });
 }
@@ -95,6 +108,7 @@
     }
     _delayedBlockHandle = nil;
 }
+
 /**
  * Called when a socket connects and is ready for reading and writing.
  * The host parameter will be an IP address, not a DNS name.
@@ -118,20 +132,21 @@
         if (self.completeRead(self.readCache) == NO) {
             [self.mysocket readDataWithTimeout:self.timeOut tag:1];
         }else{
+            if (_delayedBlockHandle) {
+                [self cancelBlock];
+            }
             if (self.ReadSuccess) {
                 self.ReadSuccess(self.readCache);
-                if (_delayedBlockHandle) {
-                    [self cancelBlock];
-                }
             }
             self.readCache = nil;
         }
-        return;
-    }
-    if (self.ReadSuccess) {
-        self.ReadSuccess(data);
+    }else{
         if (_delayedBlockHandle) {
             [self cancelBlock];
+        }
+        if (self.ReadSuccess) {
+            self.ReadTimeout = nil;
+            self.ReadSuccess(data);
         }
     }
 }
@@ -174,6 +189,9 @@
 - (NSTimeInterval)socket:(GCDAsyncSocket *)sock shouldTimeoutReadWithTag:(long)tag
                  elapsed:(NSTimeInterval)elapsed
                bytesDone:(NSUInteger)length{
+    if (needToKeepSocketLiveAfterReadTimeout) {
+        return 1200;
+    }
     self.ReadTimeout();
     return 0;
 }
@@ -202,4 +220,12 @@
     self.Connected = NO;
 }
 
+
+-(void) disconnected{
+    [self.mysocket disconnect];
+}
+
+-(void) installConnectionBrokenHandle:(void (^)())timeoutProcess{
+    self.ConnectTimeout = timeoutProcess;
+}
 @end

@@ -54,6 +54,9 @@ maxTimeOutSec:(NSTimeInterval)inputMaxTimeout;
    TimeoutBlk:(void(^)()) timeoutProcess;
 -(void) ReadwithTimeoutKeepLive:(NSTimeInterval)inputMaxTimeout didFinished:(BOOL (^)(NSData *))Filter Success:(void (^)(NSData *))Success TimeoutBlk:(void (^)())timeoutProcess;
 
-
 -(void) continueRead;
+-(void) continueRead4KeepSocketLive:(void (^)())timeOutBlock interval:(NSTimeInterval) interval;
+
+-(void) disconnected;
+-(void) installConnectionBrokenHandle:(void (^)())timeoutProcess;
 @end
