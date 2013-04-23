@@ -12,6 +12,7 @@
 @interface TCPAsyncGCD : NSObject
 {
     __block SMDelayedBlockHandle _delayedBlockHandle;
+    BOOL  needToKeepSocketLiveAfterReadTimeout;
 }
 
 typedef void (^GCDVoidBlock)();

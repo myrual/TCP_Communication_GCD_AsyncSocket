@@ -6,7 +6,7 @@
 //
 
 #import "TCPAsyncGCD.h"
-
+#import "GCDAsyncSocket.h"
 @implementation TCPAsyncGCD
 
 @synthesize ConnectSuccess;
@@ -84,7 +84,7 @@
     needToKeepSocketLiveAfterReadTimeout = YES;
     self.ReadSuccess = Success;
     self.completeRead = Filter;
-    self.timeOut = KEEPLIVE_READ_TIMEOUT;
+    self.timeOut = -1;
     [self cancelBlock];
     [self delayBlock:inputMaxTimeout withBlock:^(){
         [self.mysocket endCurrentRead];
